@@ -10,6 +10,7 @@ import React, {
 import { PlaygroundState } from "@/data/playground-state";
 import { usePlaygroundState } from "./use-playground-state";
 import { VoiceId } from "@/data/voices";
+import { v4 as uuidv4 } from 'uuid';
 
 export type ConnectFn = () => Promise<void>;
 
@@ -56,7 +57,7 @@ export const ConnectionProvider = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          'roomName': "testRoom",
+          'roomName': `testRoom-${uuidv4()}`,
           'userId': "testUser",
           'assistantId': "QPuDDDy56n5QmEwjYvsh-Clone-hOaujN",
           'skipWelcomeMessage': true,
@@ -85,6 +86,7 @@ export const ConnectionProvider = ({
         voice: pgState.sessionConfig.voice,
       });
       console.log("✅ Connection details set, attempting WebSocket connection");
+      console.log("📣 'shouldConnect' changed to **true** in connect function");
     } catch (error) {
       console.error("❌ Connection error:", error);
       throw error;
@@ -95,6 +97,7 @@ export const ConnectionProvider = ({
     console.log("🔌 Disconnecting from the room...");
     setConnectionDetails((prev) => ({ ...prev, shouldConnect: false }));
     console.log("✅ Successfully disconnected from the room.");
+    console.log("📣 'shouldConnect' changed to **false** in disconnect function");
   }, []);
 
   // Effect to handle API key changes
@@ -102,6 +105,7 @@ export const ConnectionProvider = ({
     if (pgState.openaiAPIKey === null && connectionDetails.shouldConnect) {
       console.warn("⚠️ OpenAI API key removed while connected. Disconnecting...");
       disconnect();
+      console.log("📣 'shouldConnect' automatically set to **false** due to missing API key");
     }
   }, [pgState.openaiAPIKey, connectionDetails.shouldConnect, disconnect]);
 

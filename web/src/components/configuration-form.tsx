@@ -57,6 +57,9 @@ export function ConfigurationForm() {
   const { toast } = useToast();
   const { agent } = useVoiceAssistant();
 
+
+  return true;
+  
   const updateConfig = useCallback(async () => {
     const values = pgState.sessionConfig;
     const attributes: { [key: string]: string } = {
@@ -94,28 +97,54 @@ export function ConfigurationForm() {
       return;
     }
 
-    try {
-      let response = await localParticipant.performRpc({
-        destinationIdentity: agent.identity,
-        method: "pg.updateConfig",
-        payload: JSON.stringify(attributes),
-      });
-      let responseObj = JSON.parse(response);
-      if (responseObj.changed) {
-        toast({
-          title: "Configuration Updated",
-          description: "Your changes have been applied successfully.",
-          variant: "success",
+    console.log("🔍 Attributes being sent to RPC:", attributes); // Log attributes before sending
+    console.log("🔗 Current connection state:", connectionState); // Log connection state
+
+    const maxRetries = 3; // Number of retries
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        let response = await localParticipant.performRpc({
+          destinationIdentity: agent.identity,
+          method: "pg.updateConfig",
+          payload: JSON.stringify(attributes),
         });
+
+        console.log("📡 Response from RPC:", response); // Log the response received
+
+        let responseObj = JSON.parse(response);
+        if (responseObj.changed) {
+          toast({
+            title: "Configuration Updated",
+            description: "Your changes have been applied successfully.",
+            variant: "success",
+          });
+        }
+        return; // Exit the function if successful
+      } catch (e) {
+        const error = e as Error; // Type assertion
+        console.error("❌ Error during RPC call:", error); // Log the error object
+        if (error.message.includes("Connection timeout")) {
+          attempt++;
+          console.warn(`Retrying RPC call... Attempt ${attempt}/${maxRetries}`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+        } else {
+          toast({
+            title: "Error Updating Configuration",
+            description: "There was an error updating your configuration. Please try again.",
+            variant: "destructive",
+          });
+          return; // Exit the function on other errors
+        }
       }
-    } catch (e) {
-      toast({
-        title: "Error Updating Configuration",
-        description:
-          "There was an error updating your configuration. Please try again.",
-        variant: "destructive",
-      });
     }
+
+    toast({
+      title: "Error Updating Configuration",
+      description: "Maximum retry attempts reached. Please check your connection.",
+      variant: "destructive",
+    });
   }, [
     pgState.sessionConfig,
     pgState.instructions,

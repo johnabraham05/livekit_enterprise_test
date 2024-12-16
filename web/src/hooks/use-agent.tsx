@@ -123,11 +123,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   }, [rawSegments]);
 
   useEffect(() => {
-    if (shouldConnect) {
+    if (shouldConnect && !agent) {
+      console.log("🔄 Attempting to connect the agent...");
       setRawSegments({});
       setDisplayTranscriptions([]);
     }
-  }, [shouldConnect]);
+  }, [shouldConnect, agent]);
 
   useEffect(() => {
     if (agent) {
@@ -138,14 +139,6 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
       // Additional logic when agent disconnects
     }
   }, [agent]);
-
-  // Optional: Monitor agent connection attempts if possible
-  useEffect(() => {
-    if (shouldConnect && !agent) {
-      console.log("🔄 Attempting to connect the agent...");
-      // Assuming useVoiceAssistant handles the connection, you might need to add hooks or callbacks there
-    }
-  }, [shouldConnect, agent]);
 
   return (
     <AgentContext.Provider value={{ displayTranscriptions, agent }}>
