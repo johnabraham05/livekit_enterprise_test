@@ -129,6 +129,24 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     }
   }, [shouldConnect]);
 
+  useEffect(() => {
+    if (agent) {
+      console.log("✅ Agent connected:", agent.identity);
+      // Additional logic when agent connects
+    } else {
+      console.log("🔴 Agent disconnected.");
+      // Additional logic when agent disconnects
+    }
+  }, [agent]);
+
+  // Optional: Monitor agent connection attempts if possible
+  useEffect(() => {
+    if (shouldConnect && !agent) {
+      console.log("🔄 Attempting to connect the agent...");
+      // Assuming useVoiceAssistant handles the connection, you might need to add hooks or callbacks there
+    }
+  }, [shouldConnect, agent]);
+
   return (
     <AgentContext.Provider value={{ displayTranscriptions, agent }}>
       {children}

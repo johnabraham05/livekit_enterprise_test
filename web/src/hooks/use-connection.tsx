@@ -42,38 +42,65 @@ export const ConnectionProvider = ({
   const { pgState, dispatch } = usePlaygroundState();
 
   const connect = async () => {
+    console.log("🔍 Initiating connection process...");
     if (!pgState.openaiAPIKey) {
+      console.error("❌ OpenAI API key is missing. Cannot initiate connection.");
       throw new Error("OpenAI API key is required to connect");
     }
-    const response = await fetch("/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(pgState),
-    });
+    
+    try {
+      console.log("🔄 Joining room...");
+      const joinRoomResponse = await fetch('https://us-central1-creators-a-g-i-2-7qvbri.cloudfunctions.net/api/v3/socket/join', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          'roomName': "testRoom",
+          'userId': "testUser",
+          'assistantId': "QPuDDDy56n5QmEwjYvsh-Clone-hOaujN",
+          'skipWelcomeMessage': true,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch token");
+      console.log("📡 Join room response status:", joinRoomResponse.status);
+
+      if (!joinRoomResponse.ok || joinRoomResponse.status !== 200) {
+        console.error("❌ Failed to create/join room. Response not OK.");
+        throw new Error('Failed to create/join room');
+      }
+
+      const roomData = await joinRoomResponse.json();
+      console.log("📝 Room data received:", roomData);
+
+      if (!roomData.success) {
+        console.error("❌ Room join unsuccessful:", roomData.error);
+        throw new Error(roomData.error || "Failed to join room");
+      }
+
+      setConnectionDetails({
+        wsUrl: "wss://creatorsagi-test-app-tnlpsdmb.livekit.cloud",
+        token: roomData.data.token,
+        shouldConnect: true,
+        voice: pgState.sessionConfig.voice,
+      });
+      console.log("✅ Connection details set, attempting WebSocket connection");
+    } catch (error) {
+      console.error("❌ Connection error:", error);
+      throw error;
     }
-
-    const { accessToken, url } = await response.json();
-
-    setConnectionDetails({
-      wsUrl: url,
-      token: accessToken,
-      shouldConnect: true,
-      voice: pgState.sessionConfig.voice,
-    });
   };
 
   const disconnect = useCallback(async () => {
+    console.log("🔌 Disconnecting from the room...");
     setConnectionDetails((prev) => ({ ...prev, shouldConnect: false }));
+    console.log("✅ Successfully disconnected from the room.");
   }, []);
 
   // Effect to handle API key changes
   useEffect(() => {
     if (pgState.openaiAPIKey === null && connectionDetails.shouldConnect) {
+      console.warn("⚠️ OpenAI API key removed while connected. Disconnecting...");
       disconnect();
     }
   }, [pgState.openaiAPIKey, connectionDetails.shouldConnect, disconnect]);
