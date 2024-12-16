@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Instructions } from "@/components/instructions";
 import { SessionControls } from "@/components/session-controls";
 import { ConnectButton } from "./connect-button";
 import { ConnectionState } from "livekit-client";
@@ -120,21 +119,16 @@ export function Chat() {
         <div className="w-full h-full flex flex-col">
           <div className="flex items-center justify-center w-full">
             <div className="lg:hidden w-full">
-              {isChatRunning && !isEditingInstructions ? (
+              {isChatRunning ? (
                 renderVisualizer()
               ) : (
-                <Instructions />
+                <div></div>
               )}
             </div>
             <div className="hidden lg:block w-full">
-              <Instructions />
             </div>
           </div>
-          <div className="grow h-full flex items-center justify-center">
-            <div className="w-full hidden lg:block">
-              {isChatRunning && !isEditingInstructions && renderVisualizer()}
-            </div>
-          </div>
+          
         </div>
 
         <div className="md:mt-2 md:pt-2 md:mb-12 max-md:fixed max-md:bottom-12 max-md:left-1/2 max-md:-translate-x-1/2 max-md:z-50 xl:fixed xl:bottom-12 xl:left-1/2 xl:-translate-x-1/2 xl:z-50">

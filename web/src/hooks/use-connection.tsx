@@ -7,9 +7,6 @@ import React, {
   useContext,
   useEffect,
 } from "react";
-import { PlaygroundState } from "@/data/playground-state";
-import { usePlaygroundState } from "./use-playground-state";
-import { VoiceId } from "@/data/voices";
 import { v4 as uuidv4 } from 'uuid';
 
 export type ConnectFn = () => Promise<void>;
@@ -18,8 +15,6 @@ type TokenGeneratorData = {
   shouldConnect: boolean;
   wsUrl: string;
   token: string;
-  pgState: PlaygroundState;
-  voice: VoiceId;
   disconnect: () => Promise<void>;
   connect: ConnectFn;
 };
@@ -37,17 +32,11 @@ export const ConnectionProvider = ({
     wsUrl: string;
     token: string;
     shouldConnect: boolean;
-    voice: VoiceId;
-  }>({ wsUrl: "", token: "", shouldConnect: false, voice: VoiceId.alloy });
+  }>({ wsUrl: "", token: "", shouldConnect: false });
 
-  const { pgState, dispatch } = usePlaygroundState();
 
   const connect = async () => {
     console.log("🔍 Initiating connection process...");
-    if (!pgState.openaiAPIKey) {
-      console.error("❌ OpenAI API key is missing. Cannot initiate connection.");
-      throw new Error("OpenAI API key is required to connect");
-    }
     
     try {
       console.log("🔄 Joining room...");
@@ -83,8 +72,8 @@ export const ConnectionProvider = ({
         wsUrl: "wss://creatorsagi-test-app-tnlpsdmb.livekit.cloud",
         token: roomData.data.token,
         shouldConnect: true,
-        voice: pgState.sessionConfig.voice,
       });
+
       console.log("✅ Connection details set, attempting WebSocket connection");
       console.log("📣 'shouldConnect' changed to **true** in connect function");
     } catch (error) {
@@ -100,14 +89,6 @@ export const ConnectionProvider = ({
     console.log("📣 'shouldConnect' changed to **false** in disconnect function");
   }, []);
 
-  // Effect to handle API key changes
-  useEffect(() => {
-    if (pgState.openaiAPIKey === null && connectionDetails.shouldConnect) {
-      console.warn("⚠️ OpenAI API key removed while connected. Disconnecting...");
-      disconnect();
-      console.log("📣 'shouldConnect' automatically set to **false** due to missing API key");
-    }
-  }, [pgState.openaiAPIKey, connectionDetails.shouldConnect, disconnect]);
 
   return (
     <ConnectionContext.Provider
@@ -115,8 +96,6 @@ export const ConnectionProvider = ({
         wsUrl: connectionDetails.wsUrl,
         token: connectionDetails.token,
         shouldConnect: connectionDetails.shouldConnect,
-        voice: connectionDetails.voice,
-        pgState,
         connect,
         disconnect,
       }}

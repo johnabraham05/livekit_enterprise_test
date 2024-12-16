@@ -4,13 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useConnection } from "@/hooks/use-connection";
 import { Loader2, Mic } from "lucide-react";
-import { usePlaygroundState } from "@/hooks/use-playground-state";
-import { AuthDialog } from "./auth";
 
 export function ConnectButton() {
   const { connect, disconnect, shouldConnect } = useConnection();
   const [connecting, setConnecting] = useState<boolean>(false);
-  const { pgState } = usePlaygroundState();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [initiateConnectionFlag, setInitiateConnectionFlag] = useState(false);
 
@@ -18,11 +15,7 @@ export function ConnectButton() {
     if (shouldConnect) {
       await disconnect();
     } else {
-      if (!pgState.openaiAPIKey) {
-        setShowAuthDialog(true);
-      } else {
         await initiateConnection();
-      }
     }
   };
 
@@ -43,11 +36,11 @@ export function ConnectButton() {
   };
 
   useEffect(() => {
-    if (initiateConnectionFlag && pgState.openaiAPIKey) {
+    if (initiateConnectionFlag) {
       initiateConnection();
       setInitiateConnectionFlag(false);
     }
-  }, [initiateConnectionFlag, initiateConnection, pgState.openaiAPIKey]);
+  }, [initiateConnectionFlag, initiateConnection]);
 
   return (
     <>
@@ -68,11 +61,6 @@ export function ConnectButton() {
           </>
         )}
       </Button>
-      <AuthDialog
-        open={showAuthDialog}
-        onOpenChange={setShowAuthDialog}
-        onAuthComplete={handleAuthComplete}
-      />
     </>
   );
 }
